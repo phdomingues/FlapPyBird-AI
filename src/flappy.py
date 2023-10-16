@@ -1,135 +1,57 @@
-import asyncio
-import sys
-
+from enum import Enum, auto
 import pygame
+
+from abc import ABC, abstractclassmethod
+
 from pygame.locals import K_ESCAPE, K_SPACE, K_UP, KEYDOWN, QUIT
+from utils import GameConfig
 
-from .entities import (
-    Background,
-    Floor,
-    GameOver,
-    Pipes,
-    Player,
-    PlayerMode,
-    Score,
-    WelcomeMessage,
-)
-from .utils import GameConfig, Images, Sounds, Window
+from .entities import Score
+from .utils import GameConfig
 
+class PlayerAction(Enum):
+    NOTHING = auto()
+    JUMP = auto()
 
-class Flappy:
+class Flappy(ABC):
     def __init__(self):
-        pygame.init()
-        pygame.display.set_caption("Flappy Bird")
-        window = Window(288, 512)
-        screen = pygame.display.set_mode((window.width, window.height))
-        images = Images()
+        self.score = Score(self.config)
 
-        self.config = GameConfig(
-            screen=screen,
-            clock=pygame.time.Clock(),
-            fps=30,
-            window=window,
-            images=images,
-            sounds=Sounds(),
-        )
+    @abstractclassmethod
+    def make_a_play(self) -> PlayerAction:
+        ...
+    
+    @abstractclassmethod
+    def process_event(self) -> None:
+        ...
 
-    async def start(self):
-        while True:
-            self.background = Background(self.config)
-            self.floor = Floor(self.config)
-            self.player = Player(self.config)
-            self.welcome_message = WelcomeMessage(self.config)
-            self.game_over_message = GameOver(self.config)
-            self.pipes = Pipes(self.config)
-            self.score = Score(self.config)
-            await self.splash()
-            await self.play()
-            await self.game_over()
+class FlappyPlayer(Flappy):
+    def __init__(self, config: GameConfig):
+        super().__init__(config)
+        self.player_state = PlayerAction.NOTHING
 
-    async def splash(self):
-        """Shows welcome splash screen animation of flappy bird"""
+    def make_a_play(self):
+        return
 
-        self.player.set_mode(PlayerMode.SHM)
-
-        while True:
-            for event in pygame.event.get():
-                self.check_quit_event(event)
-                if self.is_tap_event(event):
-                    return
-
-            self.background.tick()
-            self.floor.tick()
-            self.player.tick()
-            self.welcome_message.tick()
-
-            pygame.display.update()
-            await asyncio.sleep(0)
-            self.config.tick()
-
-    def check_quit_event(self, event):
-        if event.type == QUIT or (
-            event.type == KEYDOWN and event.key == K_ESCAPE
-        ):
-            pygame.quit()
-            sys.exit()
-
-    def is_tap_event(self, event):
+    def process_event(self, event):
         m_left, _, _ = pygame.mouse.get_pressed()
         space_or_up = event.type == KEYDOWN and (
             event.key == K_SPACE or event.key == K_UP
         )
         screen_tap = event.type == pygame.FINGERDOWN
-        return m_left or space_or_up or screen_tap
+        
+        self.player_state = PlayerAction.JUMP if m_left or space_or_up or screen_tap else PlayerAction.NOTHING
+    
 
-    async def play(self):
-        self.score.reset()
-        self.player.set_mode(PlayerMode.NORMAL)
+class FlappyFactory:
+    class FlappyType(Enum):
+        PLAYER = auto()
 
-        while True:
-            if self.player.collided(self.pipes, self.floor):
-                return
-
-            for i, pipe in enumerate(self.pipes.upper):
-                if self.player.crossed(pipe):
-                    self.score.add()
-
-            for event in pygame.event.get():
-                self.check_quit_event(event)
-                if self.is_tap_event(event):
-                    self.player.flap()
-
-            self.background.tick()
-            self.floor.tick()
-            self.pipes.tick()
-            self.score.tick()
-            self.player.tick()
-
-            pygame.display.update()
-            await asyncio.sleep(0)
-            self.config.tick()
-
-    async def game_over(self):
-        """crashes the player down and shows gameover image"""
-
-        self.player.set_mode(PlayerMode.CRASH)
-        self.pipes.stop()
-        self.floor.stop()
-
-        while True:
-            for event in pygame.event.get():
-                self.check_quit_event(event)
-                if self.is_tap_event(event):
-                    if self.player.y + self.player.h >= self.floor.y - 1:
-                        return
-
-            self.background.tick()
-            self.floor.tick()
-            self.pipes.tick()
-            self.score.tick()
-            self.player.tick()
-            self.game_over_message.tick()
-
-            self.config.tick()
-            pygame.display.update()
-            await asyncio.sleep(0)
+    def create(flappy_type:FlappyType, config:GameConfig) -> Flappy:
+        flappy_creator = {
+            FlappyFactory.FlappyType.PLAYER: FlappyFactory._create_player
+        }
+        return flappy_creator[flappy_type](config)
+    
+    def _create_player(config:GameConfig):
+        return FlappyPlayer(config)

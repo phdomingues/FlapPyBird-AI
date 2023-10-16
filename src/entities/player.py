@@ -7,7 +7,7 @@ from ..utils import GameConfig, clamp
 from .entity import Entity
 from .floor import Floor
 from .pipe import Pipe, Pipes
-
+from random import random
 
 class PlayerMode(Enum):
     SHM = "SHM"
@@ -19,7 +19,7 @@ class Player(Entity):
     def __init__(self, config: GameConfig) -> None:
         image = config.images.player[0]
         x = int(config.window.width * 0.2)
-        y = int((config.window.height - image.get_height()) / 2)
+        y = int((config.window.height - image.get_height()) / 2) + 10*random()
         super().__init__(config, image, x, y)
         self.min_y = -2 * self.h
         self.max_y = config.window.viewport_height - self.h * 0.75
