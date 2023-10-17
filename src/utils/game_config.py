@@ -2,7 +2,6 @@ import os
 
 import pygame
 
-from ..flappy import Flappy
 from .images import Images
 from .sounds import Sounds
 from .window import Window
@@ -17,7 +16,6 @@ class GameConfig:
         window: Window,
         images: Images,
         sounds: Sounds,
-        n_agents: int,
     ) -> None:
         self.screen = screen
         self.clock = clock
@@ -25,7 +23,6 @@ class GameConfig:
         self.window = window
         self.images = images
         self.sounds = sounds
-        self.n_agents = n_agents
         self.debug = os.environ.get("DEBUG", False)
 
     def tick(self) -> None:

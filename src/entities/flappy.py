@@ -9,13 +9,13 @@ from .floor import Floor
 from .pipe import Pipe, Pipes
 from random import random
 
-class PlayerMode(Enum):
+class FlappyMode(Enum):
     SHM = "SHM"
     NORMAL = "NORMAL"
     CRASH = "CRASH"
 
 
-class Player(Entity):
+class Flappy(Entity):
     def __init__(self, config: GameConfig) -> None:
         image = config.images.player[0]
         x = int(config.window.width * 0.2)
@@ -28,16 +28,16 @@ class Player(Entity):
         self.frame = 0
         self.crashed = False
         self.crash_entity = None
-        self.set_mode(PlayerMode.SHM)
+        self.set_mode(FlappyMode.SHM)
 
-    def set_mode(self, mode: PlayerMode) -> None:
+    def set_mode(self, mode: FlappyMode) -> None:
         self.mode = mode
-        if mode == PlayerMode.NORMAL:
+        if mode == FlappyMode.NORMAL:
             self.reset_vals_normal()
             self.config.sounds.wing.play()
-        elif mode == PlayerMode.SHM:
+        elif mode == FlappyMode.SHM:
             self.reset_vals_shm()
-        elif mode == PlayerMode.CRASH:
+        elif mode == FlappyMode.CRASH:
             self.stop_wings()
             self.config.sounds.hit.play()
             if self.crash_entity == "pipe":
@@ -117,16 +117,16 @@ class Player(Entity):
 
     def draw(self) -> None:
         self.update_image()
-        if self.mode == PlayerMode.SHM:
+        if self.mode == FlappyMode.SHM:
             self.tick_shm()
-        elif self.mode == PlayerMode.NORMAL:
+        elif self.mode == FlappyMode.NORMAL:
             self.tick_normal()
-        elif self.mode == PlayerMode.CRASH:
+        elif self.mode == FlappyMode.CRASH:
             self.tick_crash()
 
-        self.draw_player()
+        self.draw_flappy()
 
-    def draw_player(self) -> None:
+    def draw_flappy(self) -> None:
         rotated_image = pygame.transform.rotate(self.image, self.rot)
         rotated_rect = rotated_image.get_rect(center=self.rect.center)
         self.config.screen.blit(rotated_image, rotated_rect)

@@ -3,7 +3,7 @@ from .entity import Entity
 from .floor import Floor
 from .game_over import GameOver
 from .pipe import Pipe, Pipes
-from .player import Player, PlayerMode
+from .flappy import Flappy, FlappyMode
 from .score import Score
 from .welcome_message import WelcomeMessage
 
@@ -12,8 +12,9 @@ __all__ = [
     "Floor",
     "Pipe",
     "Pipes",
-    "Player",
+    "Flappy",
     "Score",
     "Entity",
     "WelcomeMessage",
+    "FlappyMode"
 ]
