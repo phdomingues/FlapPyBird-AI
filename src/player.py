@@ -3,7 +3,7 @@ import pygame
 
 from abc import ABC, abstractclassmethod
 
-from pygame.locals import K_ESCAPE, K_SPACE, K_UP, KEYDOWN, QUIT
+from pygame.locals import K_SPACE, K_UP, KEYDOWN
 from utils import GameConfig
 
 from .entities import Score, Flappy, Pipes, Floor, FlappyMode
@@ -13,19 +13,26 @@ class PlayerAction(Enum):
     NOTHING = auto()
     JUMP = auto()
 
+class PlayerState(Enum):
+    DEAD = auto()
+    ALIVE = auto()
+
 class Player(ABC):
     def __init__(self, config:GameConfig):
-        self.score = Score(config)
+        self.action = PlayerAction.NOTHING
+        self.state = PlayerState.ALIVE
         self.flappy = Flappy(config)
+        self.score = 0
 
-    @abstractclassmethod
-    def make_a_play(self) -> PlayerAction:
-        ...
-    
     @abstractclassmethod
     def process_event(self, event) -> None:
         ...
-    
+
+    def make_a_play(self) -> None:
+        if self.action is PlayerAction.JUMP:
+            self.flappy.flap()
+        self.action = PlayerAction.NOTHING
+
     def check_colision(self, pipes:Pipes, floor:Floor) -> bool:
         return self.flappy.collided(pipes, floor)
 
@@ -33,19 +40,20 @@ class Player(ABC):
         return self.flappy.crossed(pipes)
 
     def crash(self) -> None:
-        self.flappy.set_mode(FlappyMode.CRASH)
+        if self.state is PlayerState.ALIVE:
+            self.flappy.set_mode(FlappyMode.CRASH)
+            self.state = PlayerState.DEAD
+    
+    def scored(self) -> None:
+        self.score += 1
 
     def tick(self):
-        self.score.tick()
         self.flappy.tick()
 
 class HumanPlayer(Player):
     def __init__(self, config:GameConfig):
         super().__init__(config)
         self.player_state = PlayerAction.NOTHING
-
-    def make_a_play(self):
-        return
 
     def process_event(self, event):
         m_left, _, _ = pygame.mouse.get_pressed()
@@ -54,19 +62,4 @@ class HumanPlayer(Player):
         )
         screen_tap = event.type == pygame.FINGERDOWN
         
-        if m_left or space_or_up or screen_tap:
-            self.flappy.flap()
-    
-
-class FlappyFactory:
-    class FlappyType(Enum):
-        PLAYER = auto()
-
-    def create(flappy_type:FlappyType, config:GameConfig) -> Flappy:
-        flappy_creator = {
-            FlappyFactory.FlappyType.PLAYER: FlappyFactory._create_player
-        }
-        return flappy_creator[flappy_type](config)
-    
-    def _create_player(config:GameConfig):
-        return FlappyPlayer(config)
+        self.action = PlayerAction.JUMP if m_left or space_or_up or screen_tap else PlayerAction.NOTHING

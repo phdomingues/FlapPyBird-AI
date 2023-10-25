@@ -3,20 +3,19 @@ from enum import Enum, auto
 import sys
 
 import pygame
-from pygame.locals import K_ESCAPE, K_SPACE, K_UP, KEYDOWN, QUIT
+from pygame.locals import K_ESCAPE, KEYDOWN, QUIT
 
 from .entities import (
     Background,
     Floor,
     GameOver,
     Pipes,
-    Flappy,
     FlappyMode,
     Score,
     WelcomeMessage,
 )
 from .utils import GameConfig, Images, Sounds, Window
-from .player import Player, HumanPlayer
+from .player import HumanPlayer, PlayerState
 
 
 class Game:
@@ -43,12 +42,12 @@ class Game:
 
     async def start(self):
         while True:
+            self.score = Score(self.config)
             self.background = Background(self.config)
             self.floor = Floor(self.config)
             self.welcome_message = WelcomeMessage(self.config)
             self.game_over_message = GameOver(self.config)
             self.pipes = Pipes(self.config)
-            #self.score = Score(self.config)
             if self.game_mode is self.GameMode.PLAY:
                 self.players = [HumanPlayer(self.config)]
             #elif self.game_mode is self.GameMode.TRAIN:
@@ -91,28 +90,48 @@ class Game:
 
     async def play(self):
         for player in self.players:
-            player.score.reset()
             player.flappy.set_mode(FlappyMode.NORMAL)
 
         while True:
             current_events = []
+            scored = False
+            death_count = 0
+
             for event in pygame.event.get():
                 self.check_quit_event(event)
                 current_events.append(event)
 
             for player in self.players:
+                if player.state is PlayerState.DEAD:
+                    death_count += 1
+                    continue
                 if player.check_colision(self.pipes, self.floor):
                     player.crash()
                 for _, pipe in enumerate(self.pipes.upper):
-                    if player.check_crossed_pipe(pipe):
-                        player.score.add()
+                    # Check if crossed pipe or if other player already scored (this avoid the checking multiple times since all players have the same X coordinate)
+                    if scored or player.check_crossed_pipe(pipe):
+                        player.scored() # just set scored to True, its not cummulative
+                        scored = True
+
                 for event in current_events:
                     player.process_event(event)
-                
 
+                # Allow player to execute a single action (jump or not) depending on the events he processed
+                player.make_a_play()
+                
+            if scored:
+                self.score.add()
+                scored = False
+            
+            if death_count == len(self.players):
+                return
+            else:
+                death_count = 0
+    
             self.background.tick()
             self.floor.tick()
             self.pipes.tick()
+            self.score.tick()
             for player in self.players:
                 player.tick()
 
@@ -131,15 +150,16 @@ class Game:
         while True:
             for event in pygame.event.get():
                 self.check_quit_event(event)
-                if self.is_tap_event(event):
-                    if self.player.y + self.player.h >= self.floor.y - 1:
-                        return
+                #if self.is_tap_event(event):
+                #    if self.player.y + self.player.h >= self.floor.y - 1:
+                #        return
 
             self.background.tick()
             self.floor.tick()
             self.pipes.tick()
             self.score.tick()
-            self.player.tick()
+            for player in self.players:
+                player.tick()
             self.game_over_message.tick()
 
             self.config.tick()
