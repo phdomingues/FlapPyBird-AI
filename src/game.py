@@ -15,7 +15,8 @@ from .entities import (
     WelcomeMessage,
 )
 from .utils import GameConfig, Images, Sounds, Window
-from .player import HumanPlayer, PlayerState
+from .player import FFPlayer, HumanPlayer, PlayerState
+from ai import N_TRAINING_AGENTS
 
 
 class Game:
@@ -50,8 +51,8 @@ class Game:
             self.pipes = Pipes(self.config)
             if self.game_mode is self.GameMode.PLAY:
                 self.players = [HumanPlayer(self.config)]
-            #elif self.game_mode is self.GameMode.TRAIN:
-                #self.players = [Flappy(self.config) for _ in range(self.config.n_agents)]
+            elif self.game_mode is self.GameMode.TRAIN:
+                self.players = [FFPlayer(self.config) for _ in range(N_TRAINING_AGENTS)]
             else:
                 print("Error: Invalid game mode")
                 exit(100)
@@ -117,7 +118,7 @@ class Game:
                     player.process_event(event)
 
                 # Allow player to execute a single action (jump or not) depending on the events he processed
-                player.make_a_play()
+                player.make_a_play(self.pipes)
                 
             if scored:
                 self.score.add()

@@ -1,11 +1,14 @@
-from enum import Enum, auto
+
 import pygame
+import torch
 
 from abc import ABC, abstractclassmethod
+from enum import Enum, auto
+from typing import List
 
 from pygame.locals import K_SPACE, K_UP, KEYDOWN
-from utils import GameConfig
 
+from .ai.model import FF
 from .entities import Score, Flappy, Pipes, Floor, FlappyMode
 from .utils import GameConfig
 
@@ -28,7 +31,7 @@ class Player(ABC):
     def process_event(self, event) -> None:
         ...
 
-    def make_a_play(self) -> None:
+    def make_a_play(self, pipes:Pipes) -> None:
         if self.action is PlayerAction.JUMP:
             self.flappy.flap()
         self.action = PlayerAction.NOTHING
@@ -63,3 +66,32 @@ class HumanPlayer(Player):
         screen_tap = event.type == pygame.FINGERDOWN
         
         self.action = PlayerAction.JUMP if m_left or space_or_up or screen_tap else PlayerAction.NOTHING
+
+class FFPlayer(Player):
+    ### Feed Forward Neural Network Player
+    def __init__(self, config:GameConfig):
+        super().__init__(config)
+        self.player_state = PlayerAction.NOTHING
+        self.nn = FF()
+
+    def process_event(self, event):
+        # AI won't use any keyboard events to play, so we just return
+        return
+    
+    def _normalize(self, values:List[float], reference:float) -> List[float]:
+        return [v - reference for v in values]
+    
+    def make_a_play(self, pipes:Pipes) -> None:
+        pipes_x = self._normalize([p.x+p.w/2 for p in pipes.lower], self.flappy.x)
+        pp_idx = [idx for idx,val in enumerate(pipes_x) if val>0][0] # index of the next pipe
+        # Overload the make_a_play method, since the ai need to decide once per frame if it should jump or not
+        nn_input = torch.tensor([
+            self.flappy.y,          # Flappy Y coord 
+            pipes.lower[pp_idx].x,  # Bottom pipe X coord
+            pipes.lower[pp_idx].y,  # Bottom pipe Y coord
+            pipes.upper[pp_idx].x,  # Top pipe X coord
+            pipes.upper[pp_idx].y   # Top pipe Y coord
+        ], dtype=torch.float32)
+        activation = self.nn(nn_input).item()
+        self.action = PlayerAction.JUMP if activation > 0.5 else PlayerAction.NOTHING
+        return super().make_a_play(pipes)
