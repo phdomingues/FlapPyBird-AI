@@ -1,3 +1,5 @@
+import numpy as np
+import torch
 import torch.nn.modules as nn
 import torch.nn.functional as F
 
@@ -24,3 +26,30 @@ class FF(nn.Module):
         x = F.relu(self.fc2(x))
         x = F.sigmoid(self.fc3(x))
         return x
+
+    def encode(self):
+        ### Encode the neural network weights and bias into a 1d vector 
+        w1 = self.fc1.weight.flatten()
+        b1 = self.fc1.bias.flatten()
+        w2 = self.fc2.weight.flatten()
+        b2 = self.fc2.bias.flatten()
+        w3 = self.fc3.weight.flatten()
+        b3 = self.fc3.bias.flatten()
+        return torch.cat((w1,b1,w2,b2,w3,b3), dim=0)
+
+    def decode(self, data):
+        w1_idx = np.prod(self.fc1.weight.shape) # count the number of weights on layer fc1
+        b1_idx = w1_idx + np.prod(self.fc1.bias.shape)
+        w2_idx = b1_idx + np.prod(self.fc2.weight.shape)
+        b2_idx = w2_idx + np.prod(self.fc2.bias.shape)
+        w3_idx = b2_idx + np.prod(self.fc3.weight.shape)
+        b3_idx = w3_idx + np.prod(self.fc3.bias.shape)
+
+        return {
+            'w1': torch.reshape(data[0:w1_idx], self.fc1.weight.shape),
+            'b1': torch.reshape(data[w1_idx:b1_idx], self.fc1.bias.shape),
+            'w2': torch.reshape(data[b1_idx:w2_idx], self.fc2.weight.shape),
+            'b2': torch.reshape(data[w2_idx:b2_idx], self.fc2.bias.shape),
+            'w3': torch.reshape(data[b2_idx:w3_idx], self.fc3.weight.shape),
+            'b3': torch.reshape(data[w3_idx:b3_idx], self.fc3.bias.shape),
+        }
