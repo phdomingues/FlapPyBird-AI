@@ -39,7 +39,7 @@ class FF(nn.Module):
 
     def decode(self, data):
         w1_idx = np.prod(self.fc1.weight.shape) # count the number of weights on layer fc1
-        b1_idx = w1_idx + np.prod(self.fc1.bias.shape)
+        b1_idx = w1_idx + np.prod(self.fc1.bias.shape) # count the number of bias values on layer fc1
         w2_idx = b1_idx + np.prod(self.fc2.weight.shape)
         b2_idx = w2_idx + np.prod(self.fc2.bias.shape)
         w3_idx = b2_idx + np.prod(self.fc3.weight.shape)
@@ -53,3 +53,11 @@ class FF(nn.Module):
             'w3': torch.reshape(data[b2_idx:w3_idx], self.fc3.weight.shape),
             'b3': torch.reshape(data[w3_idx:b3_idx], self.fc3.bias.shape),
         }
+
+    def from_chromossome(self, wb:dict) -> None:
+        self.fc1.weight = wb['w1']
+        self.fc1.bias = wb['b1']
+        self.fc2.weight = wb['w2']
+        self.fc2.bias = wb['b2']
+        self.fc3.weight = wb['w3']
+        self.fc3.bias = wb['b3']
