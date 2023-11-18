@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn.modules as nn
 import torch.nn.functional as F
+from typing import Optional
 
 class FF(nn.Module):
     # Inputs:
@@ -13,13 +14,15 @@ class FF(nn.Module):
     # Outputs: 
     #   - Jump
 
-    def __init__(self):
+    def __init__(self, chromosome:Optional[torch.Tensor]=None):
         super().__init__()
         self.input_size = 5
         self.num_classes = 1
         self.fc1 = nn.Linear(self.input_size, 6)
         self.fc2 = nn.Linear(6, 3)
         self.fc3 = nn.Linear(3, self.num_classes)
+        if chromosome is not None:
+            self.load_chromosome(chromosome)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -27,7 +30,7 @@ class FF(nn.Module):
         x = F.sigmoid(self.fc3(x))
         return x
 
-    def encode(self):
+    def to_chromosome(self):
         ### Encode the neural network weights and bias into a 1d vector 
         w1 = self.fc1.weight.flatten()
         b1 = self.fc1.bias.flatten()
@@ -37,7 +40,8 @@ class FF(nn.Module):
         b3 = self.fc3.bias.flatten()
         return torch.cat((w1,b1,w2,b2,w3,b3), dim=0)
 
-    def decode(self, data):
+    def chromosome2dict(self, data):
+        ### Decode the 1d vector into a dictionary format
         w1_idx = np.prod(self.fc1.weight.shape) # count the number of weights on layer fc1
         b1_idx = w1_idx + np.prod(self.fc1.bias.shape) # count the number of bias values on layer fc1
         w2_idx = b1_idx + np.prod(self.fc2.weight.shape)
@@ -54,10 +58,14 @@ class FF(nn.Module):
             'b3': torch.reshape(data[w3_idx:b3_idx], self.fc3.bias.shape),
         }
 
-    def from_chromossome(self, wb:dict) -> None:
-        self.fc1.weight = wb['w1']
-        self.fc1.bias = wb['b1']
-        self.fc2.weight = wb['w2']
-        self.fc2.bias = wb['b2']
-        self.fc3.weight = wb['w3']
-        self.fc3.bias = wb['b3']
+    def load_from_dict(self, wb:dict) -> None:
+        with torch.no_grad():
+            self.fc1.weight = torch.nn.parameter.Parameter(wb['w1'])
+            self.fc1.bias = torch.nn.parameter.Parameter(wb['b1'])
+            self.fc2.weight = torch.nn.parameter.Parameter(wb['w2'])
+            self.fc2.bias = torch.nn.parameter.Parameter(wb['b2'])
+            self.fc3.weight = torch.nn.parameter.Parameter(wb['w3'])
+            self.fc3.bias = torch.nn.parameter.Parameter(wb['b3'])
+
+    def load_chromosome(self, chromosome:torch.Tensor) -> None:
+        self.load_from_dict(self.chromosome2dict(chromosome))

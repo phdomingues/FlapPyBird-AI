@@ -4,12 +4,12 @@ import torch
 
 from abc import ABC, abstractclassmethod
 from enum import Enum, auto
-from typing import List
+from typing import Optional
 
 from pygame.locals import K_SPACE, K_UP, KEYDOWN
 
 from .ai.model import FF
-from .entities import Score, Flappy, Pipes, Floor, FlappyMode
+from .entities import Flappy, Pipes, Floor, FlappyMode
 from .utils import GameConfig
 
 class PlayerAction(Enum):
@@ -73,20 +73,18 @@ class HumanPlayer(Player):
 
 class FFPlayer(Player):
     ### Feed Forward Neural Network Player
-    def __init__(self, config:GameConfig):
+    def __init__(self, config:GameConfig, chromosome:Optional[torch.Tensor]=None):
         super().__init__(config)
         self.player_state = PlayerAction.NOTHING
-        self.nn = FF()
+        self.nn = FF(chromosome)
 
     def process_event(self, event) -> None:
         # AI won't use any keyboard events to play, so we just return
         return
     
-    def _normalize(self, values:List[float], reference:float) -> List[float]:
-        return [v - reference for v in values]
-    
     def make_a_play(self, pipes:Pipes) -> None:
-        pipes_x = self._normalize([p.x+p.w/2 for p in pipes.lower], self.flappy.x)
+        _normalize = lambda values, reference: [v - reference for v in values]
+        pipes_x = _normalize([p.x+p.w/2 for p in pipes.lower], self.flappy.x)
         pp_idx = [idx for idx,val in enumerate(pipes_x) if val>0][0] # index of the next pipe
         # Overload the make_a_play method, since the ai need to decide once per frame if it should jump or not
         nn_input = torch.tensor([
@@ -99,3 +97,6 @@ class FFPlayer(Player):
         activation = self.nn(nn_input).item()
         self.action = PlayerAction.JUMP if activation > 0.5 else PlayerAction.NOTHING
         return super().make_a_play(pipes)
+
+    def export_chromosome(self) -> torch.Tensor:
+        return self.nn.to_chromosome()
