@@ -22,6 +22,7 @@ class PlayerState(Enum):
 
 class Player(ABC):
     def __init__(self, config:GameConfig):
+        self.config = config
         self.action = PlayerAction.NOTHING
         self.state = PlayerState.ALIVE
         self.flappy = Flappy(config)
@@ -50,6 +51,9 @@ class Player(ABC):
     def scored(self) -> None:
         self.score += 1
 
+    def reset(self) -> None:
+        self.__init__(self.config)
+
     def tick(self):
         self.flappy.tick()
 
@@ -74,7 +78,7 @@ class FFPlayer(Player):
         self.player_state = PlayerAction.NOTHING
         self.nn = FF()
 
-    def process_event(self, event):
+    def process_event(self, event) -> None:
         # AI won't use any keyboard events to play, so we just return
         return
     
