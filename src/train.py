@@ -18,7 +18,7 @@ from .player import FFPlayer, PlayerState
 
 
 class TrainGA:
-    def __init__(self, population_size:int=100):
+    def __init__(self, population_size:int=200):
         # Game configs
         pygame.init()
         pygame.display.set_caption("Flappy Bird")
@@ -80,6 +80,7 @@ class TrainGA:
             # TODO: Fix score display
             # TODO: Animate (matplotlib probably) the best network structure + activations
             # TODO: Create a control slider, to set tick speed
+            # TODO: Increase dificulty
 
             # === Reset game
             await self.reset()
@@ -91,7 +92,7 @@ class TrainGA:
         son_chromosome = [p1_chromosome[gene].item() if selected_parent%2 else p2_chromosome[gene].item() for gene, selected_parent in enumerate(genes_division)]
         return torch.Tensor(son_chromosome).type(p1_chromosome.dtype)
 
-    def mutate(self, chromosome:torch.Tensor, mutation_chance:float=0.1, mutation_std_dev:float=0.01):
+    def mutate(self, chromosome:torch.Tensor, mutation_chance:float=0.05, mutation_std_dev:float=0.3):
         random_selection = np.random.uniform(size=len(chromosome))
         genes_to_mutate = random_selection < mutation_chance
         for mutate, gene in zip(genes_to_mutate, range(len(chromosome))):
@@ -166,7 +167,5 @@ class TrainGA:
         self.score.tick()
         for individual in self.population:
             individual.tick()
-            individual.reset()
         self.config.tick()
         pygame.display.update()
-        #await asyncio.sleep(0)

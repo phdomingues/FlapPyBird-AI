@@ -21,6 +21,9 @@ class FF(nn.Module):
         self.fc1 = nn.Linear(self.input_size, 6)
         self.fc2 = nn.Linear(6, 3)
         self.fc3 = nn.Linear(3, self.num_classes)
+        self.fc1.requires_grad_(False)
+        self.fc2.requires_grad_(False)
+        self.fc3.requires_grad_(False)
         if chromosome is not None:
             self.load_chromosome(chromosome)
 
@@ -59,13 +62,12 @@ class FF(nn.Module):
         }
 
     def load_from_dict(self, wb:dict) -> None:
-        with torch.no_grad():
-            self.fc1.weight = torch.nn.parameter.Parameter(wb['w1'])
-            self.fc1.bias = torch.nn.parameter.Parameter(wb['b1'])
-            self.fc2.weight = torch.nn.parameter.Parameter(wb['w2'])
-            self.fc2.bias = torch.nn.parameter.Parameter(wb['b2'])
-            self.fc3.weight = torch.nn.parameter.Parameter(wb['w3'])
-            self.fc3.bias = torch.nn.parameter.Parameter(wb['b3'])
+        self.fc1.weight = torch.nn.parameter.Parameter(wb['w1'])
+        self.fc1.bias = torch.nn.parameter.Parameter(wb['b1'])
+        self.fc2.weight = torch.nn.parameter.Parameter(wb['w2'])
+        self.fc2.bias = torch.nn.parameter.Parameter(wb['b2'])
+        self.fc3.weight = torch.nn.parameter.Parameter(wb['w3'])
+        self.fc3.bias = torch.nn.parameter.Parameter(wb['b3'])
 
     def load_chromosome(self, chromosome:torch.Tensor) -> None:
         self.load_from_dict(self.chromosome2dict(chromosome))
