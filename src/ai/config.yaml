@@ -7,9 +7,9 @@ mutation_probability: 0.05        # Default: 0.05 (5%)
 mutation_standard_deviation: 0.3  # Default: 0.3
 elitism: True                     # Default: True
 stop_condition:
-  generations: .inf               # Default: .inf / Max number of generations to evolve (can be .inf)
-  score: 20                       # Default: .inf / Max score (can be .inf)
-  time: .inf                      # Default: .inf / Max training time in seconds (can be .inf)
-output_file: ''                   # Default: ''
+  generations: .inf               # Default: .inf / Max number of generations to evolve
+  score: .inf                     # Default: .inf / Max score
+  time: .inf                      # Default: .inf / Max training time in seconds
+load_previous_best: True          # Default: True / Loads the best (saved in .pth file) as 1 individual in the population
 
 # Note: By removing or misspelling any of the parameters, a default value will be assumed

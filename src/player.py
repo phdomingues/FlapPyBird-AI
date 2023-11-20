@@ -4,13 +4,16 @@ import torch
 
 from abc import ABC, abstractclassmethod
 from enum import Enum, auto
+from pathlib import Path
 from typing import Optional
 
 from pygame.locals import K_SPACE, K_UP, KEYDOWN
 
+from .ai import BEST_MODEL_PATH
 from .ai.model import FF
 from .entities import Flappy, Pipes, Floor, FlappyMode
 from .utils import GameConfig
+
 
 class PlayerAction(Enum):
     NOTHING = auto()
@@ -100,3 +103,16 @@ class FFPlayer(Player):
 
     def export_chromosome(self) -> torch.Tensor:
         return self.nn.to_chromosome()
+
+    def save(self) -> None:
+        torch.save(self.nn.state_dict(), BEST_MODEL_PATH)
+
+    def load_best(self) -> bool:
+        if BEST_MODEL_PATH.exists():
+            self.nn.load_state_dict(torch.load(BEST_MODEL_PATH))
+        else:
+            from tkinter import messagebox, Tk
+            Tk().wm_withdraw() #to hide the main window
+            messagebox.showinfo('Warning', 'No previous model was found, starting training from scratch')
+            return False
+        return True

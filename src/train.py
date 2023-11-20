@@ -18,11 +18,11 @@ from .entities import (
 )
 from .utils import GameConfig, Images, Sounds, Window
 from .player import FFPlayer, PlayerState
-from .ai import CONFIG_PATH
+from .ai import AI_CONFIG_PATH
 
 
 class TrainGA:
-    def __init__(self, population_size:int=200):
+    def __init__(self):
         # Game configs
         pygame.init()
         pygame.display.set_caption("Flappy Bird")
@@ -38,11 +38,16 @@ class TrainGA:
             sounds=Sounds()
         )
         # GA configs
-        with CONFIG_PATH.open('r') as f:
+        with AI_CONFIG_PATH.open('r') as f:
             self.ga_configs = yaml.safe_load(f)
         self.generation = 0
         self.population_size = self.ga_configs.get('population_size', 200)
         self.population = [FFPlayer(self.config) for _ in range(self.population_size)]
+        if self.ga_configs.get('load_previous_best', True):
+            for ind in self.population:
+                success = ind.load_best()
+                if not success:
+                    break # just stop loading and keep the randomly initialized networks
 
     async def start(self):
         start = time.time()
@@ -58,7 +63,7 @@ class TrainGA:
             scores = np.array([ind.score for ind in self.population])
 
             # === Track best individual
-            best_individual = self.population[scores.argmax()]
+            self.best_individual = self.population[scores.argmax()]
 
             # === Select parents based on fitness
             # Normalize the scores
@@ -68,7 +73,7 @@ class TrainGA:
             # Elitism
             new_population = []
             if self.ga_configs.get('elitism', True):
-                new_population.append(FFPlayer(self.config, best_individual.export_chromosome()))
+                new_population.append(FFPlayer(self.config, self.best_individual.export_chromosome()))
             # Randomly (uniform) select the parents
             while len(new_population) != len(self.population):
                 # Get 2 parents randomly (save the indexes)
@@ -92,9 +97,9 @@ class TrainGA:
             # TODO: Increase dificulty
 
             # === Stop condition
-            generation_condition = self.generation >= self.ga_configs['stop_condition']['generations']
-            score_condition = best_individual.score >= self.ga_configs['stop_condition']['score']
-            time_condition = time.time() - start > self.ga_configs['stop_condition']['time']
+            generation_condition = self.generation >= self.ga_configs.get('stop_condition', {}).get('generations', float('inf'))
+            score_condition = self.best_individual.score >= self.ga_configs.get('stop_condition', {}).get('score', float('inf'))
+            time_condition = time.time() - start > self.ga_configs.get('stop_condition', {}).get('time', float('inf'))
             if generation_condition or score_condition or time_condition:
                 return
 
@@ -120,6 +125,10 @@ class TrainGA:
         if event.type == QUIT or (
             event.type == KEYDOWN and event.key == K_ESCAPE
         ):
+            try:
+                self.best_individual.save() # Save the best individual state dict in a file
+            except AttributeError:
+                pass
             pygame.quit()
             sys.exit()
 
