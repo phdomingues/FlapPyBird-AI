@@ -1,0 +1,15 @@
+################################
+# Genetic algorithm parameters #
+################################
+
+population_size: 200              # Default: 200
+mutation_probability: 0.05        # Default: 0.05 (5%)
+mutation_standard_deviation: 0.3  # Default: 0.3
+elitism: True                     # Default: True
+stop_condition:
+  generations: .inf               # Default: .inf / Max number of generations to evolve (can be .inf)
+  score: 20                       # Default: .inf / Max score (can be .inf)
+  time: .inf                      # Default: .inf / Max training time in seconds (can be .inf)
+output_file: ''                   # Default: ''
+
+# Note: By removing or misspelling any of the parameters, a default value will be assumed

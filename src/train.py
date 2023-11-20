@@ -1,5 +1,8 @@
 import asyncio
+from pathlib import Path
 import sys
+import time
+import yaml
 
 import numpy as np
 import pygame
@@ -15,6 +18,7 @@ from .entities import (
 )
 from .utils import GameConfig, Images, Sounds, Window
 from .player import FFPlayer, PlayerState
+from .ai import CONFIG_PATH
 
 
 class TrainGA:
@@ -34,12 +38,16 @@ class TrainGA:
             sounds=Sounds()
         )
         # GA configs
-        self.generation = 1
-        self.population_size = population_size
+        with CONFIG_PATH.open('r') as f:
+            self.ga_configs = yaml.safe_load(f)
+        self.generation = 0
+        self.population_size = self.ga_configs.get('population_size', 200)
         self.population = [FFPlayer(self.config) for _ in range(self.population_size)]
 
     async def start(self):
+        start = time.time()
         while True:
+            self.generation+=1
             self.score = Score(self.config)
             self.background = Background(self.config)
             self.floor = Floor(self.config)
@@ -58,7 +66,9 @@ class TrainGA:
             # Generate a accumulated sum of the normalized scores
             scores_norm = np.cumsum(scores_norm)
             # Elitism
-            new_population = [FFPlayer(self.config, best_individual.export_chromosome())]
+            new_population = []
+            if self.ga_configs.get('elitism', True):
+                new_population.append(FFPlayer(self.config, best_individual.export_chromosome()))
             # Randomly (uniform) select the parents
             while len(new_population) != len(self.population):
                 # Get 2 parents randomly (save the indexes)
@@ -76,11 +86,17 @@ class TrainGA:
             self.population = new_population
 
             # TODO: Save best model to file
-            # TODO: Stop condition (time or max score)
-            # TODO: Fix score display
+            # TODO: Stop condition - check every N ticks to be more dynamic
             # TODO: Animate (matplotlib probably) the best network structure + activations
             # TODO: Create a control slider, to set tick speed
             # TODO: Increase dificulty
+
+            # === Stop condition
+            generation_condition = self.generation >= self.ga_configs['stop_condition']['generations']
+            score_condition = best_individual.score >= self.ga_configs['stop_condition']['score']
+            time_condition = time.time() - start > self.ga_configs['stop_condition']['time']
+            if generation_condition or score_condition or time_condition:
+                return
 
             # === Reset game
             await self.reset()
@@ -92,13 +108,13 @@ class TrainGA:
         son_chromosome = [p1_chromosome[gene].item() if selected_parent%2 else p2_chromosome[gene].item() for gene, selected_parent in enumerate(genes_division)]
         return torch.Tensor(son_chromosome).type(p1_chromosome.dtype)
 
-    def mutate(self, chromosome:torch.Tensor, mutation_chance:float=0.05, mutation_std_dev:float=0.3):
+    def mutate(self, chromosome:torch.Tensor):
         random_selection = np.random.uniform(size=len(chromosome))
-        genes_to_mutate = random_selection < mutation_chance
+        genes_to_mutate = random_selection < self.ga_configs.get('mutation_probability', 0.05)
         for mutate, gene in zip(genes_to_mutate, range(len(chromosome))):
             if mutate:
                 # Mutation adds or subtracts a random value from a normal distribution (mean=0, std_dev=user_defined)
-                chromosome[gene] += np.random.normal(0, mutation_std_dev)
+                chromosome[gene] += np.random.normal(0, self.ga_configs.get('mutation_standard_deviation', 0.3))
 
     def check_quit_event(self, event):
         if event.type == QUIT or (
