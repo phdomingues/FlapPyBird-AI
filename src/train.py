@@ -127,9 +127,9 @@ class TrainGA:
                 if individual.check_colision(self.pipes, self.floor):
                     individual.crash()
                 for _, pipe in enumerate(self.pipes.upper):
-                    # Check if crossed pipe or if other individual already scored (this avoid the checking multiple times since all individuals have the same X coordinate)
                     if individual.check_crossed_pipe(pipe):
                         individual.scored() # just set scored to True, its not cummulative
+                        scored=True
 
                 for event in current_events:
                     individual.process_event(event)
