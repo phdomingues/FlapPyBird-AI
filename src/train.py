@@ -63,6 +63,16 @@ class TrainGA:
             self.floor = Floor(self.config)
             self.pipes = Pipes(self.config)
 
+            print(f"Generation {self.generation} / Best score = {self.best_individual.score} / simulation time ({int(time.time()-self.training_start)} s)")
+            
+            # Check if all individuals are hardstuck at score 0 for more then the given number of generations
+            hardstuck = self.best_individual.score == 0 and not self.generation%self.ga_configs.get('hardstuck_gen', 10)
+            if hardstuck:
+                print(f'>>> Generation {self.generation} is hardstuck... Reseting population')
+                for ind in self.population[::-1]:
+                    del ind
+                self.population = [FFPlayer(self.config) for _ in range(self.population_size)]
+
             # === Score population (fitness function)
             await self.play()
             scores = np.array([ind.score for ind in self.population])
