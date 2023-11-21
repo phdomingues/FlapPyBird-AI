@@ -42,6 +42,8 @@ class TrainGA:
         self.generation = 0
         self.population_size = self.ga_configs.get('population_size', 200)
         self.population = [FFPlayer(self.config) for _ in range(self.population_size)]
+        self.best_individual = self.population[0] # Adopts a random individual as the first best for reference (will be updated once the game starts)
+        # If load best is True, load the first individual in the population as a copy of it and all the others as mutated variants
         if self.ga_configs.get('load_previous_best', True):
             for i, ind in enumerate(self.population):
                 success = ind.load_best()
@@ -53,7 +55,7 @@ class TrainGA:
                 
 
     async def start(self):
-        start = time.time()
+        self.training_start = time.time()
         while True:
             self.generation+=1
             self.score = Score(self.config)
@@ -64,9 +66,6 @@ class TrainGA:
             # === Score population (fitness function)
             await self.play()
             scores = np.array([ind.score for ind in self.population])
-
-            # === Track best individual
-            self.best_individual = self.population[scores.argmax()]
 
             # === Select parents based on fitness
             # Normalize the scores
@@ -93,17 +92,9 @@ class TrainGA:
             # === Replace the population
             self.population = new_population
 
-            # TODO: Stop condition - check every N ticks to be more dynamic
             # TODO: Animate (matplotlib probably) the best network structure + activations
             # TODO: Create a control slider, to set tick speed
             # TODO: Increase dificulty
-
-            # === Stop condition
-            generation_condition = self.generation >= self.ga_configs.get('stop_condition', {}).get('generations', float('inf'))
-            score_condition = self.best_individual.score >= self.ga_configs.get('stop_condition', {}).get('score', float('inf'))
-            time_condition = time.time() - start > self.ga_configs.get('stop_condition', {}).get('time', float('inf'))
-            if generation_condition or score_condition or time_condition:
-                return
 
             # === Reset game
             await self.reset()
@@ -127,13 +118,16 @@ class TrainGA:
         if event.type == QUIT or (
             event.type == KEYDOWN and event.key == K_ESCAPE
         ):
-            try:
-                if self.ga_configs.get('save_best', True):
-                    self.best_individual.save() # Save the best individual state dict in a file
-            except AttributeError:
-                pass
-            pygame.quit()
-            sys.exit()
+            self.quit()
+    
+    def quit(self) -> None:
+        try:
+            if self.ga_configs.get('save_best', True):
+                self.best_individual.save() # Save the best individual state dict in a file
+        except AttributeError:
+            pass
+        pygame.quit()
+        sys.exit()
 
     async def play(self):
         for individual in self.population:
@@ -181,6 +175,15 @@ class TrainGA:
             for individual in self.population:
                 if individual.state == PlayerState.ALIVE:
                     individual.tick()
+                    # === Track best individual
+                    if individual.score > self.best_individual.score:
+                        self.best_individual = individual
+
+            generation_condition = self.generation >= self.ga_configs.get('stop_condition', {}).get('generations', float('inf'))
+            score_condition = self.best_individual.score >= self.ga_configs.get('stop_condition', {}).get('score', float('inf'))
+            time_condition = time.time() - self.training_start > self.ga_configs.get('stop_condition', {}).get('time', float('inf'))
+            if generation_condition or score_condition or time_condition:
+                self.quit()
 
             pygame.display.update()
             await asyncio.sleep(0)
