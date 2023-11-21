@@ -10,6 +10,7 @@ stop_condition:
   generations: .inf               # Default: .inf / Max number of generations to evolve
   score: .inf                     # Default: .inf / Max score
   time: .inf                      # Default: .inf / Max training time in seconds
-load_previous_best: True          # Default: True / Loads the best (saved in .pth file) as 1 individual in the population
+save_best: True                   # Default: True / Saves the best model in a .pth file
+load_previous_best: True          # Default: True / Loads the best (saved in .pth file) and mutated variations as generation 1
 
 # Note: By removing or misspelling any of the parameters, a default value will be assumed

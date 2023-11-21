@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 import sys
 import time
 import yaml
@@ -44,10 +43,14 @@ class TrainGA:
         self.population_size = self.ga_configs.get('population_size', 200)
         self.population = [FFPlayer(self.config) for _ in range(self.population_size)]
         if self.ga_configs.get('load_previous_best', True):
-            for ind in self.population:
+            for i, ind in enumerate(self.population):
                 success = ind.load_best()
                 if not success:
                     break # just stop loading and keep the randomly initialized networks
+                chromosome = ind.export_chromosome()
+                self.mutate(chromosome)
+                ind.load_chromosome(chromosome)
+                
 
     async def start(self):
         start = time.time()
@@ -90,7 +93,6 @@ class TrainGA:
             # === Replace the population
             self.population = new_population
 
-            # TODO: Save best model to file
             # TODO: Stop condition - check every N ticks to be more dynamic
             # TODO: Animate (matplotlib probably) the best network structure + activations
             # TODO: Create a control slider, to set tick speed
@@ -126,7 +128,8 @@ class TrainGA:
             event.type == KEYDOWN and event.key == K_ESCAPE
         ):
             try:
-                self.best_individual.save() # Save the best individual state dict in a file
+                if self.ga_configs.get('save_best', True):
+                    self.best_individual.save() # Save the best individual state dict in a file
             except AttributeError:
                 pass
             pygame.quit()

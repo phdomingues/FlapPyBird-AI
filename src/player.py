@@ -86,10 +86,10 @@ class FFPlayer(Player):
         return
     
     def make_a_play(self, pipes:Pipes) -> None:
+        # Overload the make_a_play method, since the ai need to decide once per frame if it should jump or not
         _normalize = lambda values, reference: [v - reference for v in values]
         pipes_x = _normalize([p.x+p.w/2 for p in pipes.lower], self.flappy.x)
         pp_idx = [idx for idx,val in enumerate(pipes_x) if val>0][0] # index of the next pipe
-        # Overload the make_a_play method, since the ai need to decide once per frame if it should jump or not
         nn_input = torch.tensor([
             self.flappy.y,          # Flappy Y coord 
             pipes.lower[pp_idx].x,  # Bottom pipe X coord
@@ -103,6 +103,9 @@ class FFPlayer(Player):
 
     def export_chromosome(self) -> torch.Tensor:
         return self.nn.to_chromosome()
+
+    def load_chromosome(self, chromosome:torch.Tensor) -> None:
+        self.nn.load_chromosome(chromosome)
 
     def save(self) -> None:
         torch.save(self.nn.state_dict(), BEST_MODEL_PATH)
