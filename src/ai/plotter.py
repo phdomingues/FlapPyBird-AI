@@ -52,7 +52,7 @@ class NetworkPlotter:
         # Plot neurons
         plot_neurons = ax.scatter(neuron_x, neuron_y, s=400, facecolors='w', edgecolors='k', lw=1, zorder=1)
 
-        ani = animation.FuncAnimation(fig, partial(NetworkPlotter.animate, neurons=plot_neurons, connections=plot_connections, queue=plot_queue), interval=1)
+        ani = animation.FuncAnimation(fig, partial(NetworkPlotter.animate, neurons=plot_neurons, connections=plot_connections, queue=plot_queue), interval=5)
         plt.show()
 
     def animate(frame, neurons:PathCollection=None, connections=None, queue=None):
@@ -68,7 +68,5 @@ class NetworkPlotter:
         neurons.set_facecolor(['w' for _ in range(14)] + ['g' if data['fc3'] > 0.5 else 'r'])
     
     def __del__(self):
-        self.process.join(10)
-        if self.process.is_alive():
-            self.process.terminate()
+        self.process.terminate()
         self.process.close()

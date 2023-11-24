@@ -138,6 +138,7 @@ class TrainGA:
                 self.best_individual.save() # Save the best individual state dict in a file
         except AttributeError:
             pass
+        del self.nn_plotter
         pygame.quit()
         sys.exit()
 
@@ -191,7 +192,10 @@ class TrainGA:
                     if individual.score > self.best_individual.score:
                         self.best_individual = individual
             
-            self.nn_plotter.update(self.best_individual.get_activations())
+            for individual in self.population:
+                if individual.state is PlayerState.ALIVE:
+                    self.nn_plotter.update(individual.get_activations())
+                    break
 
             generation_condition = self.generation >= self.ga_configs.get('stop_condition', {}).get('generations', float('inf'))
             score_condition = self.best_individual.score >= self.ga_configs.get('stop_condition', {}).get('score', float('inf'))
