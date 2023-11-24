@@ -24,13 +24,23 @@ class FF(nn.Module):
         self.fc1.requires_grad_(False)
         self.fc2.requires_grad_(False)
         self.fc3.requires_grad_(False)
+        self.last_activations = {
+            'input': np.zeros(5),
+            'fc1': np.zeros(6),
+            'fc2': np.zeros(3),
+            'fc3': 0
+        }
         if chromosome is not None:
             self.load_chromosome(chromosome)
 
     def forward(self, x):
+        self.last_activations['input'] = x.detach().numpy().copy()
         x = F.relu(self.fc1(x))
+        self.last_activations['fc1'] = x.detach().numpy().copy()
         x = F.relu(self.fc2(x))
+        self.last_activations['fc2'] = x.detach().numpy().copy()
         x = F.sigmoid(self.fc3(x))
+        self.last_activations['fc3'] = x.item()
         return x
 
     def to_chromosome(self):

@@ -5,7 +5,7 @@ import torch
 from abc import ABC, abstractclassmethod
 from enum import Enum, auto
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from pygame.locals import K_SPACE, K_UP, KEYDOWN
 
@@ -119,3 +119,6 @@ class FFPlayer(Player):
             messagebox.showinfo('Warning', 'No previous model was found, starting training from scratch')
             return False
         return True
+
+    def get_activations(self) -> dict[str, Any]:
+        return self.nn.last_activations

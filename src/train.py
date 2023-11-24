@@ -1,12 +1,13 @@
 import asyncio
 import sys
 import time
+from ai.plotter import NetworkPlotter
 import yaml
 
 import numpy as np
+import torch
 import pygame
 from pygame.locals import K_ESCAPE, KEYDOWN, QUIT
-import torch
 
 from .entities import (
     Background,
@@ -39,6 +40,7 @@ class TrainGA:
         # GA configs
         with AI_CONFIG_PATH.open('r') as f:
             self.ga_configs = yaml.safe_load(f)
+        self.nn_plotter = NetworkPlotter()
         self.generation = 0
         self.population_size = self.ga_configs.get('population_size', 200)
         self.population = [FFPlayer(self.config) for _ in range(self.population_size)]
@@ -188,6 +190,8 @@ class TrainGA:
                     # === Track best individual
                     if individual.score > self.best_individual.score:
                         self.best_individual = individual
+            
+            self.nn_plotter.update(self.best_individual.get_activations())
 
             generation_condition = self.generation >= self.ga_configs.get('stop_condition', {}).get('generations', float('inf'))
             score_condition = self.best_individual.score >= self.ga_configs.get('stop_condition', {}).get('score', float('inf'))
