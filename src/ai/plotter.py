@@ -49,6 +49,10 @@ class NetworkPlotter:
                 except KeyError:
                     plot_connections[layers[i]][idx] = line
             pass
+        # Plot aux information
+        for x, text, spaces in zip([5, 25, 45, 65], ['Input', 'Hidden Layer 1\n   activation', 'Hidden Layer 2\n   activation', ''], [7, 3, 3, 0]):
+            ax.axvline(x=x, color="black", linestyle='--', alpha=0.5, zorder=0)
+            ax.text(x+spaces, 30, text, zorder=0)
         # Plot neurons
         plot_neurons = ax.scatter(neuron_x, neuron_y, s=400, facecolors='w', edgecolors='k', lw=1, zorder=1)
 
@@ -59,11 +63,16 @@ class NetworkPlotter:
         data = queue.get()
         layers = ['input', 'fc1', 'fc2']
         for layer in layers:
-            for cons, activation in zip(connections[layer].values(), data[layer]):
-                activation = max(-1,min(1,activation)) # Constraints activation between -1 and 1
+            for i, (cons, activation) in enumerate(zip(connections[layer].values(), data[layer])):
+                if layer != 'input':
+                    activation = max(-1,min(1,activation)) # Constraints activation between -1 and 1
+                else:
+                    minmaxmap = [(0,512),(0,300),(0,512),(0,300),(-512,0)]
+                    act_min, act_max = minmaxmap[i]
+                    activation = 2*(activation-act_min)/(act_max-act_min)-1
                 for con in cons:
                     con.set_color('g' if activation > 0 else 'r')
-                    con.set_linewidth(1 + (3 - 1) * abs(activation))
+                    con.set_linewidth(1 + 2 * abs(activation))
 
         neurons.set_facecolor(['w' for _ in range(14)] + ['g' if data['fc3'] > 0.5 else 'r'])
     
