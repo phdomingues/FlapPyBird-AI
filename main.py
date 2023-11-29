@@ -1,6 +1,6 @@
 import asyncio
 
-#from src.game import Game
+from src.game import Game
 from src.train import TrainGA
 
 if __name__ == "__main__":

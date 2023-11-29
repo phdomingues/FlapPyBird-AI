@@ -16,7 +16,6 @@ from .entities import (
 )
 from .utils import GameConfig, Images, Sounds, Window
 from .player import FFPlayer, HumanPlayer, PlayerState
-from ai import N_TRAINING_AGENTS
 
 
 class Game:
@@ -49,22 +48,13 @@ class Game:
             self.welcome_message = WelcomeMessage(self.config)
             self.game_over_message = GameOver(self.config)
             self.pipes = Pipes(self.config)
-            if self.game_mode is self.GameMode.PLAY:
-                self.players = [HumanPlayer(self.config)]
-            elif self.game_mode is self.GameMode.TRAIN:
-                self.players = [FFPlayer(self.config) for _ in range(N_TRAINING_AGENTS)]
-            else:
-                print("Error: Invalid game mode")
-                exit(100)
-            # await self.splash()
+            self.players = [HumanPlayer(self.config)]
+            await self.splash()
             await self.play()
             await self.game_over()
 
     async def splash(self):
         """Shows welcome splash screen animation of flappy bird"""
-    
-        self.player.set_mode(FlappyMode.SHM)
-
         while True:
             for event in pygame.event.get():
                 self.check_quit_event(event)
@@ -73,7 +63,7 @@ class Game:
 
             self.background.tick()
             self.floor.tick()
-            for agent in self.agents:
+            for agent in self.players:
                 agent.tick()
             #self.player.tick()
             self.welcome_message.tick()
@@ -151,9 +141,10 @@ class Game:
         while True:
             for event in pygame.event.get():
                 self.check_quit_event(event)
-                #if self.is_tap_event(event):
-                #    if self.player.y + self.player.h >= self.floor.y - 1:
-                #        return
+                if self.is_tap_event(event):
+                    #if self.player.y + self.player.h >= self.floor.y - 1:
+                        #return
+                    return
 
             self.background.tick()
             self.floor.tick()
@@ -166,3 +157,10 @@ class Game:
             self.config.tick()
             pygame.display.update()
             await asyncio.sleep(0)
+
+    def is_tap_event(self, event):
+        m_left, _, _ = pygame.mouse.get_pressed()
+        space_or_up = event.type == KEYDOWN and (
+            event.key == pygame.K_SPACE or event.key == pygame.K_UP
+        )
+        return event.type == pygame.FINGERDOWN or space_or_up or m_left
