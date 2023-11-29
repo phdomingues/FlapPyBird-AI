@@ -120,5 +120,7 @@ class FFPlayer(Player):
             return False
         return True
 
-    def get_activations(self) -> dict[str, Any]:
-        return self.nn.last_activations
+    def get_last_state(self) -> dict[str, Any]:
+        return {
+            'wb': {key: value.detach().numpy().copy() for key, value in self.nn.chromosome2dict(self.nn.to_chromosome()).items()},
+            'last_activations': self.nn.last_activations}

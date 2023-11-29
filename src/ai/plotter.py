@@ -6,6 +6,7 @@ import numpy as np
 import queue
 from functools import partial
 from matplotlib.collections import PathCollection
+from matplotlib.colors import hsv_to_rgb
 from typing import Any
 
 class NetworkPlotter:
@@ -50,9 +51,9 @@ class NetworkPlotter:
                     plot_connections[layers[i]][idx] = line
             pass
         # Plot aux information
-        for x, text, spaces in zip([5, 25, 45, 65], ['Input', 'Hidden Layer 1\n   activation', 'Hidden Layer 2\n   activation', ''], [7, 3, 3, 0]):
-            ax.axvline(x=x, color="black", linestyle='--', alpha=0.5, zorder=0)
-            ax.text(x+spaces, 30, text, zorder=0)
+        #for x, text, spaces in zip([5, 25, 45, 65], ['Input', 'Hidden Layer 1\n   activation', 'Hidden Layer 2\n   activation', ''], [7, 3, 3, 0]):
+            #ax.axvline(x=x, color="black", linestyle='--', alpha=0.5, zorder=0)
+            #ax.text(x+spaces, 30, text, zorder=0)
         # Plot neurons
         plot_neurons = ax.scatter(neuron_x, neuron_y, s=400, facecolors='w', edgecolors='k', lw=1, zorder=1)
 
@@ -60,22 +61,47 @@ class NetworkPlotter:
         plt.show()
 
     def animate(frame, neurons:PathCollection=None, connections=None, queue=None):
+        weight2layer = {
+            'w1': 'input',
+            'w2': 'fc1',
+            'w3': 'fc2'
+        }
         data = queue.get()
-        layers = ['input', 'fc1', 'fc2']
-        for layer in layers:
-            for i, (cons, activation) in enumerate(zip(connections[layer].values(), data[layer])):
-                if layer != 'input':
-                    activation = max(-1,min(1,activation)) # Constraints activation between -1 and 1
-                else:
-                    minmaxmap = [(0,512),(0,300),(0,512),(0,300),(-512,0)]
-                    act_min, act_max = minmaxmap[i]
-                    activation = 2*(activation-act_min)/(act_max-act_min)-1
-                for con in cons:
-                    con.set_color('g' if activation > 0 else 'r')
-                    con.set_linewidth(1 + 2 * abs(activation))
+        activations = data['last_activations']
+        wb = data['wb']
+        for w in ['w1', 'w2', 'w3']:
+            for cons, weights in zip(connections[weight2layer[w]].values(), wb[w].T):
+                for con, weight in zip(cons, weights):
+                    con.set_color('g' if weight > 0 else 'r')
+                    con.set_linewidth(1 + 3 * abs(weight))
+        facecolors = []
+        activation2rgb = lambda activation, threshold=0, fixsaturation=False: hsv_to_rgb((0 if activation < threshold else 1/3, 1 if fixsaturation else abs(activation), 1))
+        # Input Data
+        for activation, (act_min, act_max) in zip(activations['input'], [(-100,513),(0,500),(-100,513),(0,500),(-513,0)]):
+            activation_ = 2*(activation-act_min)/(act_max-act_min)-1
+            if abs(activation_) > 1:
+                print()
+            facecolors.append(activation2rgb(activation_))
+        # Activations of hidden layers 1 and 2
+        for activation in [*activations['fc1'], *activations['fc2']]:
+            activation = max(-1,min(1,activation))
+            facecolors.append(activation2rgb(activation))
+        # Output
+        facecolors.append(activation2rgb(max(0,min(1,activations['fc3'])), threshold=0.5, fixsaturation=True))
+        neurons.set_facecolor(facecolors)
+        #for layer in ['input', 'fc1', 'fc2']:
+        #    for i, (cons, activation) in enumerate(zip(connections[layer].values(), data[layer])):
+        #        if layer != 'input':
+        #            activation = max(-1,min(1,activation)) # Constraints activation between -1 and 1
+        #        else:
+        #            minmaxmap = [(0,512),(0,300),(0,512),(0,300),(-512,0)]
+        #            act_min, act_max = minmaxmap[i]
+        #            activation = 2*(activation-act_min)/(act_max-act_min)-1
+        #        for con in cons:
+        #            con.set_color('g' if activation > 0 else 'r')
+        #            con.set_linewidth(1 + 2 * abs(activation))
 
-        neurons.set_facecolor(['w' for _ in range(14)] + ['g' if data['fc3'] > 0.5 else 'r'])
+        #neurons.set_facecolor(['w' for _ in range(14)] + ['g' if data['fc3'] > 0.5 else 'r'])
     
     def __del__(self):
         self.process.terminate()
-        self.process.close()

@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import time
-from ai.plotter import NetworkPlotter
 import yaml
 
 import numpy as np
@@ -16,9 +15,10 @@ from .entities import (
     FlappyMode,
     Score,
 )
+from .ai import AI_CONFIG_PATH
+from .ai.plotter import NetworkPlotter
 from .utils import GameConfig, Images, Sounds, Window
 from .player import FFPlayer, PlayerState
-from .ai import AI_CONFIG_PATH
 
 
 class TrainGA:
@@ -81,7 +81,11 @@ class TrainGA:
 
             # === Select parents based on fitness
             # Normalize the scores
-            scores_norm = scores/scores.sum()
+            total = scores.sum()
+            if total == 0:
+                scores_norm = np.zeros(scores.shape)
+            else:
+                scores_norm = scores/scores.sum()
             # Generate a accumulated sum of the normalized scores
             scores_norm = np.cumsum(scores_norm)
             # Elitism
@@ -104,18 +108,19 @@ class TrainGA:
             # === Replace the population
             self.population = new_population
 
-            # TODO: Animate (matplotlib probably) the best network structure + activations
-            # TODO: Create a control slider, to set tick speed
-            # TODO: Increase dificulty
-
             # === Reset game
             await self.reset()
 
     def crossover(self, parent1:FFPlayer, parent2:FFPlayer) -> torch.Tensor:
         p1_chromosome = parent1.export_chromosome()
         p2_chromosome = parent2.export_chromosome()
-        genes_division = np.random.randint(low=0, high=2, size=len(p1_chromosome)) # High is not inclusive so this is actually a random binary array
-        son_chromosome = [p1_chromosome[gene].item() if selected_parent%2 else p2_chromosome[gene].item() for gene, selected_parent in enumerate(genes_division)]
+        
+        # == Random sampling
+        #genes_division = np.random.randint(low=0, high=2, size=len(p1_chromosome)) # High is not inclusive so this is actually a random binary array
+        #son_chromosome = [p1_chromosome[gene].item() if selected_parent%2 else p2_chromosome[gene].item() for gene, selected_parent in enumerate(genes_division)]
+        # == Ordered: Half / Half
+        son_chromosome = [*p1_chromosome[:31], *p2_chromosome[31:]]
+        
         return torch.Tensor(son_chromosome).type(p1_chromosome.dtype)
 
     def mutate(self, chromosome:torch.Tensor):
@@ -194,7 +199,7 @@ class TrainGA:
             
             for individual in self.population:
                 if individual.state is PlayerState.ALIVE:
-                    self.nn_plotter.update(individual.get_activations())
+                    self.nn_plotter.update(individual.get_last_state())
                     break
 
             generation_condition = self.generation >= self.ga_configs.get('stop_condition', {}).get('generations', float('inf'))
