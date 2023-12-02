@@ -6,9 +6,9 @@ description = "Flappy Bird in Pygame"
 requires-python = ">=3.9,<4"
 dependencies = [
     "pygame == 2.4.0",
-    "matplotlib == 3.8.1",
-    "numpy == 1.24.1",
-    "PyYAML == 6.0.1",
+    "matplotlib",
+    "numpy",
+    "PyYAML",
     "torch"
     ]
 

@@ -3,14 +3,40 @@
 
 This project consists in a AI agent to play Flappy Bird and was built over [FlapPyBird](https://github.com/sourabhv/FlapPyBird).
 
+
+# Install
+---------
+
+To install this project you must have python 3.9 or 3.10.
+
+If you use conda just create a new environment and activate it using
+
+```bash
+conda create --name flappy-ai python=3.10
+conda activate flappy-ai
+```
+
+Navigate to this repo in your terminal and install the project and dependencies
+
+```bash
+pip install -e .
+```
+
+Finally, to run, just execute main.py
+
+```bash
+python main.py
+```
+
 # AI
 -----
+
+The AI model is a feed forward neural network with 5 inputs, 2 hidden layers (6 and 5 neurons respectively) and 1 output neuron.
 
 <video width="640" height="440" controls>
   <source src="readme_assets/demo.mp4" type="video/mp4">
 </video>
 
-The AI model is a feed forward neural network with 5 inputs, 2 hidden layers (6 and 5 neurons respectively) and 1 output neuron.
 
 ## Inputs
 ----------
