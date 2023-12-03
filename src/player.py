@@ -89,14 +89,24 @@ class FFPlayer(Player):
         # Overload the make_a_play method, since the ai need to decide once per frame if it should jump or not
         _normalize = lambda values, reference: [v - reference for v in values]
         pipes_x = _normalize([p.x+p.w/2 for p in pipes.lower], self.flappy.x)
-        pp_idx = [idx for idx,val in enumerate(pipes_x) if val>0][0] # index of the next pipe
-        nn_input = torch.tensor([
-            self.flappy.y,          # Flappy Y coord 
-            pipes.lower[pp_idx].x,  # Bottom pipe X coord
-            pipes.lower[pp_idx].y,  # Bottom pipe Y coord
-            pipes.upper[pp_idx].x,  # Top pipe X coord
-            pipes.upper[pp_idx].y   # Top pipe Y coord
-        ], dtype=torch.float32)
+        pp_idx = [idx for idx,val in enumerate(pipes_x) if val>0] # index of the next pipe
+        if len(pp_idx) > 0:
+            pp_idx = pp_idx[0]
+            nn_input = torch.tensor([
+                self.flappy.y,          # Flappy Y coord 
+                pipes.lower[pp_idx].x,  # Bottom pipe X coord
+                pipes.lower[pp_idx].y,  # Bottom pipe Y coord
+                pipes.upper[pp_idx].x,  # Top pipe X coord
+                pipes.upper[pp_idx].y   # Top pipe Y coord
+            ], dtype=torch.float32)
+        else:
+            nn_input = torch.tensor([
+                self.flappy.y,          # Flappy Y coord 
+                self.config.window.viewport_width,  # Bottom pipe X coord
+                self.config.window.viewport_height,  # Bottom pipe Y coord
+                self.config.window.viewport_width,  # Top pipe X coord
+                0   # Top pipe Y coord
+            ], dtype=torch.float32)
         activation = self.nn(nn_input).item()
         self.action = PlayerAction.JUMP if activation > 0.5 else PlayerAction.NOTHING
         return super().make_a_play(pipes)
