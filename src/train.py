@@ -63,7 +63,7 @@ class TrainGA:
             self.score = Score(self.config)
             self.background = Background(self.config)
             self.floor = Floor(self.config)
-            self.pipes = Pipes(self.config)
+            self.pipes = Pipes(self.config, acceleration=self.ga_configs.get('enable_acceleration', False))
 
             print(f"Generation {self.generation} / Best score = {self.best_individual.score} / simulation time ({int(time.time()-self.training_start)} s)")
             

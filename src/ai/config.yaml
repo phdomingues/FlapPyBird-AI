@@ -10,8 +10,9 @@ stop_condition:
   generations: .inf               # Default: .inf / Max number of generations to evolve
   score: .inf                     # Default: .inf / Max score
   time: .inf                      # Default: .inf / Max training time in seconds
-save_best: True                   # Default: True / Saves the best model in a .pth file
-load_previous_best: False         # Default: True / Loads the best (saved in .pth file) and mutated variations as generation 1
+enable_acceleration: True         # Default: False
+save_best: True                  # Default: True / Saves the best model in a .pth file
+load_previous_best: True         # Default: True / Loads the best (saved in .pth file) and mutated variations as generation 1
 hardstuck_gen: 5                  # Default: 10 / Number of generations stuck at score 0 before complete reset of the population 
 
 # Note: By removing or misspelling any of the parameters, a default value will be assumed

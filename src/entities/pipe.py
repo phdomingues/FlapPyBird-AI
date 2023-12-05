@@ -24,14 +24,14 @@ class Pipes(Entity):
     upper: List[Pipe]
     lower: List[Pipe]
 
-    def __init__(self, config: GameConfig) -> None:
+    def __init__(self, config: GameConfig, acceleration: bool=False) -> None:
         super().__init__(config)
         # Constants
         self.pipe_gap = 120
         self.max_vel_x = -10
         self.min_spawn_time = 700
-        self.x_acceleration = -1
-        self.spawn_acceleration = -100
+        self.x_acceleration = -0.2 if acceleration else 0
+        self.spawn_acceleration = -60 if acceleration else 0
         self.top = 0
         self.bottom = self.config.window.viewport_height
         # Variables
