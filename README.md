@@ -81,15 +81,16 @@ A configs file is available at src/ai/config.yaml. It can be used to configure t
 
 1. population_size: Integer > 0;
 2. mutation_probability: 0 < Float < 1. The probability of a mutation occurring in a single Gene in the chromosome;
-3. mutation_standard_deviation: 0 < Float < 1. The standard deviation used to generate a random value to add or subtract from the mutated gene;
+3. mutation_standard_deviation: 0 < Float < 1. Standard deviation used to generate a random value to add or subtract from the mutated gene;
 4. elitism: Bool. Turns elitism on or off (elitism = keep the best individual between generations);
 5. stop_condition: Set of configurations related to automatic ways to stop training (all can be disabled by setting the value to .inf).
     - generations: Integer > 0. Maximum number of generations to evolve;
     - score: Integer > 0. Maximum score achieved by an individual before stopping;
     - time: Integer > 0. Maximum time (in seconds) to spend training.
-6. save_best: Bool. Save the best model upon closing the game or after finishing training.
-7. load_previous_best: Bool. Load the best previous model, saved in a .pth file. 1 individual is set as an exact copy and all others are mutated variants.
-8. hardstuck_gen: Integer > 0. The number of generations stuck at score 0 before completely resetting the population, in case the agent gets stuck.
+6. save_best: Bool. Saves the best model upon closing the game or after finishing training.
+7. enable_acceleration: Bool. The game gets faster over time.
+8. load_previous_best: Bool. Load the best previous model, saved in a .pth file. 1 individual is set as an exact copy and all others are mutated variants.
+9. hardstuck_gen: Integer > 0. The number of generations stuck at score 0 before completely resetting the population, in case the agent gets stuck.
 
 ### Chromosome
 
